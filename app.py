@@ -1,6 +1,6 @@
 import streamlit as st
 from llm_parser import analyze_text_with_langchain
-from src.fuzzy_system import fuzzy_wellness_score, risk_label
+from fuzzy_system import fuzzy_wellness_score, risk_label
 
 st.set_page_config(page_title="AI Stress & Mental Wellness Checker", page_icon="🧠", layout="centered")
 
