@@ -92,7 +92,7 @@ Return the result in exactly this format:
 
 {{
     "stress": 0,
-    "sleep": 0,
+    "sleep_difficulty": 0,
     "workload": 0,
     "mood": 0
 }}
@@ -295,7 +295,7 @@ Return ONLY valid JSON in exactly this format:
 
 {{
     "stress": 0,
-    "sleep": 0,
+    "sleep_diffuculty": 0,
     "workload": 0,
     "mood": 0
 }}
