@@ -229,7 +229,6 @@ def parse_wellness_input(user_text: str) -> Dict[str, float]:
             f"Unable to analyze the input using Groq: {exc}"
         ) from exc
 
-
 # ---------------------------------------------------------
 # Compatibility Alias
 # ---------------------------------------------------------
@@ -248,3 +247,4 @@ def analyze_text_with_langchain(user_text: str) -> Dict[str, float]:
     Compatibility function used by app.py.
     """
     return parse_wellness_input(user_text)
+    
