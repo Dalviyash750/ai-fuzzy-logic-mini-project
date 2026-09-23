@@ -91,8 +91,7 @@ def fuzzy_wellness_score(stress, sleep_difficulty, workload, low_mood):
         agg_curve = np.maximum(agg_curve, np.minimum(strength, curve))
 
     area = np.trapezoid(agg_curve, universe)
-    score = float(np.trapz(agg_curve * universe, universe) / area) if area > 0 else 50.0
-
+    score = float(np.trapezoid(agg_curve * universe, universe) / area) if area > 0 else 50.0
     return {
         "score": score,
         "memberships": vals,
