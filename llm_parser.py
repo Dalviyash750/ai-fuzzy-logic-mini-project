@@ -241,3 +241,9 @@ def analyze_text(user_text: str) -> Dict[str, float]:
     Use this if app.py currently calls analyze_text().
     """
     return parse_wellness_input(user_text)
+    
+def analyze_text_with_langchain(user_text: str) -> Dict[str, float]:
+    """
+    Compatibility function used by app.py.
+    """
+    return parse_wellness_input(user_text)
