@@ -1,17 +1,30 @@
-   """
-Genuine Mamdani-style fuzzy inference:
-1. Fuzzification using triangular/trapezoidal membership functions.
-2. Rule evaluation using min for AND and max aggregation.
-3. Defuzzification using centroid of the aggregated output.
+"""
+Genuine Mamdani-style fuzzy inference system.
 
-Inputs: stress, sleep difficulty, workload, low mood (0-10).
-Output: wellness risk score (0-100).
+Inputs:
+    stress
+    sleep difficulty
+    workload
+    low mood
+
+Each input is scored from 0-10.
+
+Output:
+    Wellness risk score from 0-100.
+
+Method:
+    1. Fuzzification
+    2. Mamdani rule evaluation
+    3. Max aggregation
+    4. Centroid defuzzification
 """
 
 import numpy as np
 
 
 def tri(x, a, b, c):
+    """Triangular membership function."""
+
     if x <= a or x >= c:
         return 0.0 if x != b else 1.0
 
@@ -22,6 +35,8 @@ def tri(x, a, b, c):
 
 
 def trap(x, a, b, c, d):
+    """Trapezoidal membership function."""
+
     if x <= a or x >= d:
         return 0.0
 
@@ -35,12 +50,12 @@ def trap(x, a, b, c, d):
 
 
 def input_memberships(x):
-    """
-    Convert a 0-10 input into low, medium and high membership values.
-    """
+    """Calculate low, medium and high membership values."""
 
-    # Keep inputs safely inside the expected range.
-    x = max(0.0, min(10.0, float(x)))
+    x = float(x)
+
+    # Keep input inside the expected 0-10 range.
+    x = max(0.0, min(10.0, x))
 
     return {
         "low": trap(x, 0, 0, 2.5, 4.5),
@@ -50,9 +65,7 @@ def input_memberships(x):
 
 
 def output_memberships(y):
-    """
-    Membership functions for the 0-100 wellness risk output.
-    """
+    """Calculate output membership values for risk score 0-100."""
 
     return {
         "low": trap(y, 0, 0, 20, 40),
@@ -67,20 +80,11 @@ def fuzzy_wellness_score(
     workload,
     low_mood
 ):
-    """
-    Run the complete Mamdani fuzzy inference system.
+    """Run the complete Mamdani fuzzy inference system."""
 
-    Returns:
-        score
-        memberships
-        rule_strengths
-        rules_fired
-        explanation
-    """
-
-    # --------------------------------------------------------
+    # ========================================================
     # 1. FUZZIFICATION
-    # --------------------------------------------------------
+    # ========================================================
 
     vals = {
         "stress": input_memberships(stress),
@@ -89,82 +93,92 @@ def fuzzy_wellness_score(
         "low_mood": input_memberships(low_mood),
     }
 
-    # --------------------------------------------------------
+    # ========================================================
     # 2. FUZZY RULE BASE
-    # --------------------------------------------------------
+    # ========================================================
 
     rules = [
         (
-            (("stress", "low"),
-             ("sleep_difficulty", "low"),
-             ("workload", "low"),
-             ("low_mood", "low")),
+            (
+                ("stress", "low"),
+                ("sleep_difficulty", "low"),
+                ("workload", "low"),
+                ("low_mood", "low"),
+            ),
             "low",
-            "IF stress is low AND sleep difficulty is low AND workload is low AND low mood is low THEN risk is low"
+            "IF stress is low AND sleep difficulty is low AND workload is low AND low mood is low THEN risk is low",
         ),
-
         (
-            (("stress", "medium"),
-             ("sleep_difficulty", "low"),
-             ("workload", "medium")),
+            (
+                ("stress", "medium"),
+                ("sleep_difficulty", "low"),
+                ("workload", "medium"),
+            ),
             "moderate",
-            "IF stress is medium AND sleep difficulty is low AND workload is medium THEN risk is moderate"
+            "IF stress is medium AND sleep difficulty is low AND workload is medium THEN risk is moderate",
         ),
-
         (
-            (("stress", "high"),
-             ("workload", "high")),
+            (
+                ("stress", "high"),
+                ("workload", "high"),
+            ),
             "high",
-            "IF stress is high AND workload is high THEN risk is high"
+            "IF stress is high AND workload is high THEN risk is high",
         ),
-
         (
-            (("sleep_difficulty", "high"),
-             ("stress", "high")),
+            (
+                ("sleep_difficulty", "high"),
+                ("stress", "high"),
+            ),
             "high",
-            "IF sleep difficulty is high AND stress is high THEN risk is high"
+            "IF sleep difficulty is high AND stress is high THEN risk is high",
         ),
-
         (
-            (("low_mood", "high"),
-             ("stress", "high")),
+            (
+                ("low_mood", "high"),
+                ("stress", "high"),
+            ),
             "high",
-            "IF low mood is high AND stress is high THEN risk is high"
+            "IF low mood is high AND stress is high THEN risk is high",
         ),
-
         (
-            (("workload", "high"),
-             ("sleep_difficulty", "high")),
+            (
+                ("workload", "high"),
+                ("sleep_difficulty", "high"),
+            ),
             "high",
-            "IF workload is high AND sleep difficulty is high THEN risk is high"
+            "IF workload is high AND sleep difficulty is high THEN risk is high",
         ),
-
         (
-            (("stress", "medium"),
-             ("sleep_difficulty", "medium")),
+            (
+                ("stress", "medium"),
+                ("sleep_difficulty", "medium"),
+            ),
             "moderate",
-            "IF stress is medium AND sleep difficulty is medium THEN risk is moderate"
+            "IF stress is medium AND sleep difficulty is medium THEN risk is moderate",
         ),
-
         (
-            (("low_mood", "medium"),
-             ("stress", "medium")),
+            (
+                ("low_mood", "medium"),
+                ("stress", "medium"),
+            ),
             "moderate",
-            "IF low mood is medium AND stress is medium THEN risk is moderate"
+            "IF low mood is medium AND stress is medium THEN risk is moderate",
         ),
-
         (
-            (("stress", "low"),
-             ("sleep_difficulty", "low"),
-             ("workload", "medium")),
+            (
+                ("stress", "low"),
+                ("sleep_difficulty", "low"),
+                ("workload", "medium"),
+            ),
             "low",
-            "IF stress is low AND sleep difficulty is low AND workload is medium THEN risk is low"
+            "IF stress is low AND sleep difficulty is low AND workload is medium THEN risk is low",
         ),
     ]
 
-    # --------------------------------------------------------
+    # ========================================================
     # 3. RULE EVALUATION
-    # --------------------------------------------------------
+    # ========================================================
 
     aggregated = {
         "low": 0.0,
@@ -183,10 +197,10 @@ def fuzzy_wellness_score(
                 vals[variable][category]
             )
 
-        # Mamdani AND = minimum
+        # Mamdani AND operator = minimum
         strength = min(strengths)
 
-        # Mamdani aggregation = maximum
+        # Max aggregation
         aggregated[output] = max(
             aggregated[output],
             strength
@@ -197,9 +211,9 @@ def fuzzy_wellness_score(
                 f"{text} (strength={strength:.2f})"
             )
 
-    # --------------------------------------------------------
-    # 4. OUTPUT FUZZIFICATION / AGGREGATION
-    # --------------------------------------------------------
+    # ========================================================
+    # 4. OUTPUT AGGREGATION
+    # ========================================================
 
     universe = np.linspace(0, 100, 1001)
 
@@ -224,11 +238,11 @@ def fuzzy_wellness_score(
             clipped_curve
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 5. CENTROID DEFUZZIFICATION
-    # --------------------------------------------------------
+    # ========================================================
 
-    # NumPy 2.x compatible numerical integration.
+    # np.trapezoid is compatible with the current NumPy version.
     area = np.trapezoid(
         agg_curve,
         universe
@@ -244,26 +258,28 @@ def fuzzy_wellness_score(
     else:
         score = 50.0
 
-    # --------------------------------------------------------
-    # 6. RULE / RESULT EXPLANATION
-    # --------------------------------------------------------
+    # ========================================================
+    # 6. GENERATE EXPLANATION
+    # ========================================================
 
     if fired:
         explanation = (
-            f"The fuzzy inference system combined the four input indicators "
-            f"using Mamdani-style rules. The resulting wellness risk score "
-            f"is {score:.1f}/100. "
-            f"{len(fired)} fuzzy rule(s) fired with non-zero strength."
+            "The fuzzy inference system combined the stress, "
+            "sleep difficulty, workload, and low-mood indicators "
+            "using Mamdani-style fuzzy rules. "
+            f"{len(fired)} rule(s) fired with non-zero strength, "
+            f"producing a wellness risk score of {score:.1f}/100."
         )
     else:
         explanation = (
-            "No fuzzy rule fired with non-zero strength for the supplied "
-            "inputs, so the system used the neutral fallback score of 50/100."
+            "No fuzzy rule fired with non-zero strength for the "
+            "provided inputs. The system therefore used the "
+            "neutral fallback score of 50/100."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # 7. RETURN RESULT
-    # --------------------------------------------------------
+    # ========================================================
 
     return {
         "score": score,
@@ -277,10 +293,7 @@ def fuzzy_wellness_score(
 
 
 def risk_label(score):
-    """
-    Convert the numerical fuzzy score into the category
-    expected by app.py.
-    """
+    """Convert the numerical score into a risk category."""
 
     if score < 35:
         return "Low"
@@ -288,4 +301,4 @@ def risk_label(score):
     if score < 65:
         return "Moderate"
 
-    return "High" 
+    return "High"
