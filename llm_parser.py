@@ -3,31 +3,31 @@ import os
 from typing import Any, Dict
 
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_groq import ChatGroq
 
 
-# Load environment variables
 load_dotenv()
 
 
-# ---------------------------------------------------------
-# Groq Configuration
-# ---------------------------------------------------------
+# =========================================================
+# GROQ CONFIGURATION
+# =========================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
 
-# ---------------------------------------------------------
-# LLM Initialization
-# ---------------------------------------------------------
-
 if not GROQ_API_KEY:
     raise ValueError(
         "GROQ_API_KEY is not configured. "
-        "Please add GROQ_API_KEY to your .env file or Streamlit secrets."
+        "Add GROQ_API_KEY to Streamlit Secrets."
     )
+
+
+# =========================================================
+# GROQ LLM
+# =========================================================
 
 llm = ChatGroq(
     api_key=GROQ_API_KEY,
@@ -36,35 +36,30 @@ llm = ChatGroq(
 )
 
 
-# ---------------------------------------------------------
-# Prompt
-# ---------------------------------------------------------
+# =========================================================
+# PROMPT
+# =========================================================
 
 SYSTEM_PROMPT = """
 You are a wellness text analysis assistant for an academic
 AI + Fuzzy Logic project.
 
-Your task is to analyze the user's description of their
-current academic/lifestyle situation and extract ONLY the
-following four factors:
+Analyze the user's description and extract these four factors:
 
 1. stress
 2. sleep
 3. workload
 4. mood
 
-Each factor must be represented as a numerical value from
-0 to 10.
-
-Interpretation:
+Return a numerical value from 0 to 10 for each factor.
 
 stress:
 0 = no stress
 10 = extremely high stress
 
 sleep:
-0 = very poor / severely insufficient sleep
-10 = very good / sufficient sleep
+0 = very poor sleep
+10 = very good sleep
 
 workload:
 0 = very light workload
@@ -74,17 +69,9 @@ mood:
 0 = very negative mood
 10 = very positive mood
 
-Important:
-- Do not diagnose any medical or mental-health condition.
-- Do not make medical claims.
-- Analyze only what is reasonably expressed in the user's text.
-- If a factor is not explicitly mentioned, estimate it conservatively
-  from the available context.
-- Return ONLY valid JSON.
-- Do not include Markdown.
-- Do not include explanations outside the JSON.
+Do not diagnose medical or mental-health conditions.
 
-Required JSON format:
+Return ONLY valid JSON in exactly this format:
 
 {
     "stress": 0,
@@ -100,20 +87,17 @@ prompt = ChatPromptTemplate.from_messages(
         ("system", SYSTEM_PROMPT),
         (
             "human",
-            "Analyze the following user description:\n\n{user_text}",
+            "Analyze this user description:\n\n{user_text}",
         ),
     ]
 )
 
 
-# ---------------------------------------------------------
-# Helper Functions
-# ---------------------------------------------------------
+# =========================================================
+# HELPER FUNCTIONS
+# =========================================================
 
 def _clamp_score(value: Any) -> float:
-    """
-    Convert a value to a float and keep it between 0 and 10.
-    """
     try:
         score = float(value)
     except (TypeError, ValueError):
@@ -123,15 +107,8 @@ def _clamp_score(value: Any) -> float:
 
 
 def _extract_json(text: str) -> Dict[str, Any]:
-    """
-    Extract JSON from the LLM response.
-
-    Handles both pure JSON and responses where the model
-    accidentally surrounds JSON with additional text.
-    """
     text = text.strip()
 
-    # Remove Markdown code fences if present
     if text.startswith("```"):
         lines = text.splitlines()
 
@@ -143,44 +120,30 @@ def _extract_json(text: str) -> Dict[str, Any]:
 
         text = "\n".join(lines).strip()
 
-    # Try direct JSON parsing first
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # Try extracting the first JSON object
     start = text.find("{")
     end = text.rfind("}")
 
     if start != -1 and end != -1 and end > start:
-        json_text = text[start : end + 1]
+        json_text = text[start:end + 1]
 
         try:
             return json.loads(json_text)
         except json.JSONDecodeError:
             pass
 
-    raise ValueError("The Groq model did not return valid JSON.")
+    raise ValueError("Groq did not return valid JSON.")
 
 
-# ---------------------------------------------------------
-# Main Parser Function
-# ---------------------------------------------------------
+# =========================================================
+# MAIN PARSER
+# =========================================================
 
 def parse_wellness_input(user_text: str) -> Dict[str, float]:
-    """
-    Analyze user text using Groq and return four normalized
-    wellness factors.
-
-    Returns:
-        {
-            "stress": float,
-            "sleep": float,
-            "workload": float,
-            "mood": float
-        }
-    """
 
     if not user_text or not user_text.strip():
         raise ValueError("Please enter some text to analyze.")
@@ -194,10 +157,8 @@ def parse_wellness_input(user_text: str) -> Dict[str, float]:
             }
         )
 
-        # LangChain AIMessage normally exposes .content
         raw_content = response.content
 
-        # Some providers may return structured content
         if isinstance(raw_content, list):
             parts = []
 
@@ -210,41 +171,30 @@ def parse_wellness_input(user_text: str) -> Dict[str, float]:
 
             raw_content = "".join(parts)
 
-        raw_content = str(raw_content)
+        data = _extract_json(str(raw_content))
 
-        data = _extract_json(raw_content)
-
-        # Normalize the four required fields
-        result = {
+        return {
             "stress": _clamp_score(data.get("stress", 5)),
             "sleep": _clamp_score(data.get("sleep", 5)),
             "workload": _clamp_score(data.get("workload", 5)),
             "mood": _clamp_score(data.get("mood", 5)),
         }
 
-        return result
-
     except Exception as exc:
         raise RuntimeError(
             f"Unable to analyze the input using Groq: {exc}"
         ) from exc
 
-# ---------------------------------------------------------
-# Compatibility Alias
-# ---------------------------------------------------------
+
+# =========================================================
+# FUNCTIONS USED BY APP.PY
+# =========================================================
 
 def analyze_text(user_text: str) -> Dict[str, float]:
-    """
-    Compatibility wrapper.
-
-    Use this if app.py currently calls analyze_text().
-    """
     return parse_wellness_input(user_text)
-)
 
-def analyze_text_with_langchain(user_text: str) -> Dict[str, float]:
-    """
-    Compatibility function used by app.py.
-    """
+
+def analyze_text_with_langchain(
+    user_text: str,
+) -> Dict[str, float]:
     return parse_wellness_input(user_text)
-    
