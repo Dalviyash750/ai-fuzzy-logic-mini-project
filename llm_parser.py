@@ -218,18 +218,12 @@ def parse_wellness_input(user_text: str) -> Dict[str, float]:
 
         # Create clean result
         result = {
-            "stress": _clamp_score(
-                data.get("stress", 5)
-            ),
-            "sleep": _clamp_score(
-                data.get("sleep", 5)
-            ),
-            "workload": _clamp_score(
-                data.get("workload", 5)
-            ),
-            "mood": _clamp_score(
-                data.get("mood", 5)
-            ),
+    "stress": _clamp_score(data.get("stress", 5)),
+    "sleep_difficulty": _clamp_score(
+        data.get("sleep_difficulty", data.get("sleep", 5))
+    ),
+    "workload": _clamp_score(data.get("workload", 5)),
+    "mood": _clamp_score(data.get("mood", 5)),
         }
 
         return result
